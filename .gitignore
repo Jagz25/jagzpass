@@ -56,4 +56,4 @@ coverage.xml
 .vscode/
 
 # Encrypted vault file
-vault_Jag.enc
+PasswordManager/Vaults/*.enc
