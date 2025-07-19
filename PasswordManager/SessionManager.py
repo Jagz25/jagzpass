@@ -1,8 +1,12 @@
 # SessionManager.py
 import getpass
 import pyperclip
+import re
+from rich.console import Console
+
 from PasswordManager.CredentialManager import CredentialManager
 from PasswordManager.Vault import Vault
+from PasswordGenerator import check_password_strength, generate_strong_password
 
 class SessionManager:
     def __init__(self, console, vault_location):
@@ -23,7 +27,29 @@ class SessionManager:
             if choice == "1":
                 site = self.console.input("Site name: ")
                 uname = self.console.input("Username: ")
-                pwd = getpass.getpass("Password: ")
+
+                use_gen = self.console.input("Generate strong password? (y/n): ").lower()
+                if use_gen == "y":
+                    pwd = generate_strong_password()
+                    pyperclip.copy(pwd)
+                    self.console.print("[green]Password generated and copied to clipboard.[/green]")
+                else:
+                    while True:
+                        pwd = getpass.getpass("Enter your password: ")
+
+                        if cm.password_already_used(pwd):
+                            self.console.print("[red]This password was already used. Try a new one.[/red]")
+                            continue
+
+                        strength, color = check_password_strength(pwd)
+                        self.console.print(f"Password strength: [{color}]{strength}[/{color}]")
+
+                        confirm = self.console.input("Use this password? (y/n): ").lower()
+                        if confirm == "y":
+                            pyperclip.copy(pwd)
+                            self.console.print("[green]Password copied to clipboard.[/green]")
+                            break
+
                 cm.add(site, uname, pwd)
                 vault.encrypt(cm.vault_data, password)
                 self.console.print("[green]Credential added and saved.[/green]")
@@ -37,17 +63,8 @@ class SessionManager:
                         cred = cm.get(match)
                         if cred:
                             self.console.print(f"Username: {cred.get('username', '[red]Not Found[/red]')}")
-                            self.console.print("[bold]What do you want to do?[/bold]")
-                            self.console.print("[blue]1.[/blue] Show password")
-                            self.console.print("[blue]2.[/blue] Copy password to clipboard")
-                            action = self.console.input("Choose: ")
-                            if action == "1":
-                                self.console.print(f"Password: {cred['password']}")
-                            elif action == "2":
-                                pyperclip.copy(cred['password'])
-                                self.console.print("[green]Password copied to clipboard.[/green]")
-                            else:
-                                self.console.print("[red]Invalid option.[/red]")
+                            pyperclip.copy(cred['password'])
+                            self.console.print("[green]Password copied to clipboard.[/green]")
                     else:
                         self.console.print("[red]No matching site confirmed.[/red]")
                 else:

@@ -5,7 +5,7 @@ from PasswordManager.Lockout import LockoutHandler
 class Authenticator:
     def __init__(self, console):
         self.console = console
-        self.lock_handler = LockoutHandler()
+        self.lock_handler = LockoutHandler(max_attempts=5, duration=60)
 
     def authenticate(self, vault):
         attempts = 0

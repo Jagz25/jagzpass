@@ -14,3 +14,5 @@ class CredentialManager:
     def get(self, site: str):
         return self.vault_data.get(site.lower())
         
+    def password_already_used(self, new_password: str) -> bool:
+        return any(entry["password"] == new_password for entry in self.vault_data.values())

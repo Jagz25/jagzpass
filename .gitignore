@@ -57,3 +57,5 @@ coverage.xml
 
 # Encrypted vault file
 PasswordManager/Vaults/*.enc
+.lock
+locks/
