@@ -59,3 +59,4 @@ coverage.xml
 PasswordManager/Vaults/*.enc
 .lock
 locks/
+.enc
