@@ -2,6 +2,7 @@
 import getpass
 import pyperclip
 import re
+from sys import exit
 from rich.console import Console
 
 from PasswordManager.CredentialManager import CredentialManager
