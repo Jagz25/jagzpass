@@ -4,12 +4,20 @@ import base64
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from argon2.low_level import hash_secret_raw, Type
 
+
+VAULT_DIR = os.path.join(os.path.expanduser("~"), ".jagzpass", "vaults")
+
+def ensure_secure_vault_dir():
+    # Create the vault directory if it doesn't exist, with owner only access
+    if not os.path.exists(VAULT_DIR):
+        os.makedirs(VAULT_DIR, mode=0o700, exist_ok=True)
+    os.chmod(VAULT_DIR, 0o700) 
+
 class Vault:
-    def __init__(self, username, vault_location):
+    def __init__(self, username, vault_location=VAULT_DIR):
+        ensure_secure_vault_dir()
         self.username = username
-        if not os.path.exists(vault_location):
-            os.makedirs(vault_location)
-        self.file = f"{vault_location}/vault_{username}.enc"
+        self.file = os.path.join(vault_location, f"vault_{username}.enc")
 
     def exists(self):
         return os.path.exists(self.file)
@@ -34,6 +42,7 @@ class Vault:
         blob = base64.b64encode(salt + nonce + ciphertext)
         with open(self.file, "wb") as f:
             f.write(blob)
+        os.chmod(self.file, 0o600)  # Owner can read/write, others cannot
 
     def decrypt(self, password: str) -> dict:
         try:
