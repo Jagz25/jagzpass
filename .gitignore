@@ -56,7 +56,6 @@ coverage.xml
 .vscode/
 
 # Encrypted vault file
-PasswordManager/Vaults/*.enc
+Vaults/*.enc
 .lock
 locks/
-.enc
