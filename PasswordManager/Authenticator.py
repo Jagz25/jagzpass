@@ -1,5 +1,8 @@
 # Authenticator.py
 import getpass
+
+import pyperclip
+from PasswordGenerator.Generator import check_password_strength, generate_strong_password
 from PasswordManager.Lockout import LockoutHandler
 
 class Authenticator:
@@ -29,7 +32,31 @@ class Authenticator:
         return None, None
 
     def create_user(self, vault):
-        password = getpass.getpass("Set master password for new vault: ")
+        self.console.print(
+            "[bold]Create a strong master password.[/bold]\n"
+            "[cyan]Tips to get [green]strong[/green] strength:[/cyan]\n"
+            "- At least 8 characters\n"
+            "- Mix of uppercase and lowercase letters\n"
+            "- Include numbers\n"
+            "- Include symbols"
+        )
+
+        while True:
+            password = getpass.getpass("Set master password for new vault: ")
+            strength, color = check_password_strength(password)
+            self.console.print(f"Password strength: [{color}]{strength}[/{color}]")
+
+            if strength != "strong":
+                self.console.print("[red]Master password must be strong. Try again.[/red]")
+                continue
+
+            confirm = getpass.getpass("Confirm master password: ")
+            if password != confirm:
+                self.console.print("[red]Passwords do not match. Try again.[/red]")
+                continue
+
+            break
+
         vault.encrypt({}, password)
         self.console.print("[green]New vault created![/green]")
         return {}, password
