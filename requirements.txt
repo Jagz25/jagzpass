@@ -1,3 +1,4 @@
+altgraph==0.17.4
 argon2-cffi==25.1.0
 argon2-cffi-bindings==21.2.0
 certifi==2025.7.14
@@ -7,9 +8,13 @@ cryptography==45.0.5
 idna==3.10
 markdown-it-py==3.0.0
 mdurl==0.1.2
+packaging==25.0
 pycparser==2.22
 Pygments==2.19.2
+pyinstaller==6.14.2
+pyinstaller-hooks-contrib==2025.7
 pyperclip==1.9.0
 requests==2.32.4
 rich==14.0.0
+setuptools==80.9.0
 urllib3==2.5.0

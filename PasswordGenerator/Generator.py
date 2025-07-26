@@ -2,6 +2,7 @@ import random
 import string
 import re
 import os
+import pkgutil
 
 def generate_strong_password(length=16):
     # Mix of upper/lowercase, digits, symbols
@@ -16,13 +17,12 @@ def generate_strong_password(length=16):
         
 _common_pw_set = None
 
+
 def _load_common_passwords():
-    global _common_pw_set
-    if _common_pw_set is None:
-        file_path = os.path.join(os.path.dirname(__file__), "100k-most-used-passwords-NCSC.txt")
-        with open(file_path, "r", encoding="utf-8") as f:
-            _common_pw_set = set(pw.strip().lower() for pw in f)
-    return _common_pw_set
+    # Load the dictionary file even from inside a bundled executable
+    data = pkgutil.get_data(__package__, "100k-most-used-passwords-NCSC.txt")
+    lines = data.decode().splitlines()
+    return set(p.strip() for p in lines)
 
 def check_password_strength(password):
     pw_lower = password.lower()

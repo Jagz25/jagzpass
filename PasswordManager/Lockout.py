@@ -11,9 +11,6 @@ from rich.progress import Progress, BarColumn, TimeRemainingColumn
 from rich.console import Console
 
 class LockoutHandler:
-    # Handles lockout after too many failed login attempts.
-    # Lockout time increases with each failure and resets on successful login.
-    
     def __init__(self, lock_file=".lock", max_attempts=10, duration=5 * 60):
         self.lock_file = lock_file
         self.max_attempts = max_attempts
@@ -21,17 +18,15 @@ class LockoutHandler:
         self.console = Console()
 
     def _get_online_time(self):
-        # Gets current UTC time from online API (worldtimeapi.org)
         try:
             response = requests.get("https://worldtimeapi.org/api/timezone/etc/UTC", timeout=3)
             if response.status_code == 200:
                 return response.json()["unixtime"]
         except requests.RequestException:
             pass
-        return None  # fallback if offline
+        return None
 
     def is_locked(self):
-        # Checks if user is still locked out
         if not os.path.exists(self.lock_file):
             return None
 
@@ -55,8 +50,40 @@ class LockoutHandler:
         time_left = self.duration - time_passed
         return int(time_left) if time_left > 0 else None
 
+    def get_failed_attempts(self):
+        if not os.path.exists(self.lock_file):
+            return 0
+        try:
+            with open(self.lock_file, "r") as f:
+                data = json.load(f)
+                return data.get("failed_attempts", 0)
+        except Exception:
+            return 0
+
+    def record_failed_attempt(self):
+        attempts = self.get_failed_attempts() + 1
+
+        # preserve existing lock state
+        lock_data = {
+            "failed_attempts": attempts,
+            "lock_count": 0,
+            "wall_time": 0,
+            "mono_time": 0,
+            "duration": self.duration
+        }
+
+        if os.path.exists(self.lock_file):
+            try:
+                with open(self.lock_file, "r") as f:
+                    lock_data.update(json.load(f))
+            except Exception:
+                pass
+
+        lock_data["failed_attempts"] = attempts
+        with open(self.lock_file, "w") as f:
+            json.dump(lock_data, f)
+
     def lock(self):
-        # Locks the user and sets how long based on how many times it's happened
         previous_strikes = 0
         if os.path.exists(self.lock_file):
             try:
@@ -67,8 +94,6 @@ class LockoutHandler:
                 pass
 
         this_strike = previous_strikes + 1
-
-        # Progressive lockout: 1st = 1 min, 2nd = 2 mins, 3rd = 5 mins, then capped at 10 mins
         delay_map = {1: 60, 2: 120, 3: 300}
         this_timeout = delay_map.get(this_strike, 600)
 
@@ -79,7 +104,8 @@ class LockoutHandler:
             "wall_time": time_online_now,
             "mono_time": time_monotonic_now,
             "lock_count": this_strike,
-            "duration": this_timeout
+            "duration": this_timeout,
+            "failed_attempts": 0  # reset attempts after full lock
         }
 
         with open(self.lock_file, "w") as f:
@@ -88,7 +114,7 @@ class LockoutHandler:
         self.duration = this_timeout
 
     def reset(self):
-        # Clears lock file and resets lockout count
+        # Clears lock state and failed attempts (e.g., on successful login)
         if os.path.exists(self.lock_file):
             try:
                 os.remove(self.lock_file)
@@ -96,16 +122,19 @@ class LockoutHandler:
                 pass
 
     def show_timer(self, seconds):
-        # Shows a countdown timer using rich progress bar
         self.console.print(f"[red]Too many incorrect attempts. Locked for {seconds // 60} minutes.[/red]")
 
-        with Progress(
-            "[progress.description]{task.description}",
-            BarColumn(),
-            TimeRemainingColumn(),
-            transient=True
-        ) as progress:
-            lock_bar = progress.add_task("Locking down...", total=seconds)
-            for _ in range(seconds):
-                time.sleep(1)
-                progress.update(lock_bar, advance=1)
+        try:
+            with Progress(
+                "[progress.description]{task.description}",
+                BarColumn(),
+                TimeRemainingColumn(),
+                transient=True
+            ) as progress:
+                lock_bar = progress.add_task("Locking down...", total=seconds)
+                for _ in range(seconds):
+                    time.sleep(1)
+                    progress.update(lock_bar, advance=1)
+
+        except KeyboardInterrupt:
+            self.console.print("\n[red]Interrupted. Vault will stay locked.[/red]")
