@@ -1,6 +1,6 @@
 # JagzPass
 
-**JagzPass** is a local, offline-first password manager built in Python. It securely stores your credentials in an encrypted vault file, protected by a master password using modern cryptographic practices.
+**JagzPass** is a local, offline-first password manager built in Python. It supposed to securely store your credentials in an encrypted vault file, protected by a master password using modern cryptographic practices. There are some known open vulnerabilities, see the implementation document for more details.
 
 
 
@@ -86,3 +86,6 @@ You can run JagzPass manually using Python:
    ```
 
 Feel free to build your own executable using [PyInstaller](https://pyinstaller.org/en/stable/) or any method you prefer.
+
+## Disclaimer
+This is a student project. This is by no means a working product yet. 
